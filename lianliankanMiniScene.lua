@@ -138,7 +138,7 @@ function SCENE.initUI()
 				local sprite = zc.createImageView( {
 					ap = ccp( 0.5, 0.5 ),
 					pos = ccp( 100 * i - 50, 100 * ( ROW - j ) + 50 ),
-					src = "Main/head_icon/head_icon_"..data[j]..".png",
+					src = "Main/head_icon/head_icon_10"..data[j]..".png",
 					tag = ( j - 1 ) * COLUMN + i,
 					listener = SCENE.clickSpriteCallback,
 				} )
@@ -304,14 +304,23 @@ function SCENE.clickSpriteCallback( pSender, eventType )
 							return a < b
 						end )
 						dump( sortTable, "sortedTable" )
+						local numberTable = {}
 						for i = sortTable[2], sortTable[3] do
-							if SCENE.judgeLine( i, lastY, i, nextY ) then
+							table.insert( numberTable, i )
+						end
+						dump( numberTable, "numberTable" )
+						table.sort( numberTable, function( a, b )
+							return math.abs( a - lastX ) < math.abs( b - lastX )
+						end )
+						dump( numberTable, "sortTable numberTable" )
+						for i, v in ipairs(numberTable) do
+							if SCENE.judgeLine( v, lastY, v, nextY ) then
 								print( "三条线横向连接成功" )
 								table.insert( pathTable, 2, {
-										i, lastY,
+										v, lastY,
 								} )
 								table.insert( pathTable, 3, {
-										i, nextY,
+										v, nextY,
 								} )
 								dump( pathTable, "连接点" )
 								spriteLayout:getChildByTag( lastTag ):setTouchEnabled(false)
@@ -370,14 +379,23 @@ function SCENE.clickSpriteCallback( pSender, eventType )
 							return a < b
 						end )
 						dump(sortTable, "sortedTable")
+						local numberTable = {}
 						for i = sortTable[2], sortTable[3] do
-							if SCENE.judgeLine( lastX, i, nextX, i ) then
+							table.insert( numberTable, i )
+						end
+						dump(numberTable, "numberTable")
+						table.sort( numberTable, function( a, b )
+							return math.abs( a - lastY ) < math.abs( b - lastY )
+						end )
+						dump(numberTable, "sortTable numberTable")
+						for i, v in ipairs(numberTable) do
+							if SCENE.judgeLine( lastX, v, nextX, v ) then
 								print( "三条线纵向连接成功" )
 								table.insert( pathTable, 2, {
-										lastX, i,
+										lastX, v,
 								} )
 								table.insert( pathTable, 3, {
-										nextX, i,
+										nextX, v,
 								} )
 								dump( pathTable, "连接点" )
 								spriteLayout:getChildByTag( lastTag ):setTouchEnabled(false)
