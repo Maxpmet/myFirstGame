@@ -204,14 +204,7 @@ function SCENE.clickSpriteCallback( pSender, eventType )
 					print( "两个精灵在一条线上" )
 					if SCENE.judgeLine( lastX, lastY, nextX, nextY ) then
 						print( "一条线连接成功" )
-						spriteLayout:getChildByTag( lastTag ):setTouchEnabled(false)
-						spriteLayout:getChildByTag( nextTag ):setTouchEnabled(false)
-						bgLayout:getChildByTag( lastTag ):removeFromParentAndCleanup( true )
-						bgLayout:getChildByTag( nextTag ):removeFromParentAndCleanup( true )
-						statusTable[lastX][lastY] = 0
-						statusTable[nextX][nextY] = 0
-						SCENE.resultAction( nextTag, pathTable )
-						lastTag = nil
+						SCENE.result( nextTag, pathTable )
 						print( "------------------成功------------------" )
 						return
 					end
@@ -228,15 +221,7 @@ function SCENE.clickSpriteCallback( pSender, eventType )
 						table.insert( pathTable, 2, {
 							lastX, nextY,
 						} )
-						dump( pathTable, "连接点" )
-						spriteLayout:getChildByTag( lastTag ):setTouchEnabled(false)
-						spriteLayout:getChildByTag( nextTag ):setTouchEnabled(false)
-						bgLayout:getChildByTag( lastTag ):removeFromParentAndCleanup( true )
-						bgLayout:getChildByTag( nextTag ):removeFromParentAndCleanup( true )
-						statusTable[lastX][lastY] = 0
-						statusTable[nextX][nextY] = 0
-						SCENE.resultAction( nextTag, pathTable )
-						lastTag = nil
+						SCENE.result( nextTag, pathTable )
 						print( "------------------成功------------------" )
 						return
 					end
@@ -247,15 +232,7 @@ function SCENE.clickSpriteCallback( pSender, eventType )
 						table.insert( pathTable, 2, {
 							nextX, lastY,
 						} )
-						dump( pathTable, "连接点" )
-						spriteLayout:getChildByTag( lastTag ):setTouchEnabled(false)
-						spriteLayout:getChildByTag( nextTag ):setTouchEnabled(false)
-						bgLayout:getChildByTag( lastTag ):removeFromParentAndCleanup( true )
-						bgLayout:getChildByTag( nextTag ):removeFromParentAndCleanup( true )
-						statusTable[lastX][lastY] = 0
-						statusTable[nextX][nextY] = 0
-						SCENE.resultAction( nextTag, pathTable )
-						lastTag = nil
+						SCENE.result( nextTag, pathTable )
 						print( "------------------成功------------------" )
 						return
 					end
@@ -322,15 +299,7 @@ function SCENE.clickSpriteCallback( pSender, eventType )
 								table.insert( pathTable, 3, {
 										v, nextY,
 								} )
-								dump( pathTable, "连接点" )
-								spriteLayout:getChildByTag( lastTag ):setTouchEnabled(false)
-								spriteLayout:getChildByTag( nextTag ):setTouchEnabled(false)
-								bgLayout:getChildByTag( lastTag ):removeFromParentAndCleanup( true )
-								bgLayout:getChildByTag( nextTag ):removeFromParentAndCleanup( true )
-								statusTable[lastX][lastY] = 0
-								statusTable[nextX][nextY] = 0
-								SCENE.resultAction( nextTag, pathTable )
-								lastTag = nil
+								SCENE.result( nextTag, pathTable )
 								print( "------------------成功------------------" )
 								return
 							end
@@ -397,15 +366,7 @@ function SCENE.clickSpriteCallback( pSender, eventType )
 								table.insert( pathTable, 3, {
 										nextX, v,
 								} )
-								dump( pathTable, "连接点" )
-								spriteLayout:getChildByTag( lastTag ):setTouchEnabled(false)
-								spriteLayout:getChildByTag( nextTag ):setTouchEnabled(false)
-								bgLayout:getChildByTag( lastTag ):removeFromParentAndCleanup( true )
-								bgLayout:getChildByTag( nextTag ):removeFromParentAndCleanup( true )
-								statusTable[lastX][lastY] = 0
-								statusTable[nextX][nextY] = 0
-								SCENE.resultAction( nextTag, pathTable )
-								lastTag = nil
+								SCENE.result( nextTag, pathTable )
 								print( "------------------成功------------------" )
 								return
 							end
@@ -466,9 +427,20 @@ function SCENE.judgeLine( ax, ay, bx, by )
 	return true
 end
 
-function SCENE.resultAction( nextTag, path )
+function SCENE.result( nextTag, path )
 	dump( path, "路径" )
+	local lastX = ( lastTag - 1 ) % COLUMN + 1
+	local lastY = math.ceil( lastTag / COLUMN )
+	local nextX = ( nextTag - 1 ) % COLUMN + 1
+	local nextY = math.ceil( nextTag / COLUMN )
 	local sprite = spriteLayout:getChildByTag( lastTag )
+	spriteLayout:getChildByTag( lastTag ):setTouchEnabled(false)
+	spriteLayout:getChildByTag( nextTag ):setTouchEnabled(false)
+	bgLayout:getChildByTag( lastTag ):removeFromParentAndCleanup( true )
+	bgLayout:getChildByTag( nextTag ):removeFromParentAndCleanup( true )
+	statusTable[lastX][lastY] = 0
+	statusTable[nextX][nextY] = 0
+	lastTag = nil
 	local array = CCArray:create()
 	for i = 2, #path do
 		local steps = math.abs(path[i][1] + path[i][2] - path[i-1][1] - path[i-1][2])
