@@ -21,18 +21,19 @@ function SCENE.create( params )
 	dump( params, "lianliankanMiniScene" )
 	lianliankanMiniScene, miniSceneHeight, touchLayer = zc.createMyMiniScene( "lianliankan" )
 	zc.setMainNoticeView( touchLayer, "Main/common/noTice_bk_2.jpg", true )
+	math.randomseed( tonumber( tostring( os.time( ) ):reverse( ):sub( 1,6 ) ) )
 
 	-- 返回按钮button
-    local backButton = zc.createButton({
+    local backButton = zc.createButton( {
         pos      = ccp(zc.width - 40, miniSceneHeight - 40),
         effect   = "back",
         normal   = "Main/common/back_n.png",
         pressed  = "Main/common/back_h.png",
         listener = SCENE.clickBackCallback,
-    })
-    lianliankanMiniScene:addChild(backButton)
+    } )
+    lianliankanMiniScene:addChild( backButton )
 
-	SCENE.initData()
+	SCENE.initData( )
 	
 	return lianliankanMiniScene
 end
@@ -42,7 +43,7 @@ end
 ---------------------------------------------------------
 
 -- 从后端获取数据
-function SCENE.initData()
+function SCENE.initData( )
 	spriteNum = 0
 	statusTable = {
 		{
@@ -108,11 +109,30 @@ function SCENE.initData()
 	COLUMN = #statusTable
 	ROW    = #statusTable[1]
 	print( "行＝"..ROW.."  列＝"..COLUMN )
-	SCENE.initUI()
+	SCENE.initUI( )
 end
+function SCENE.initStatus( )
+	local spriteNum = 0
+	local totalNum = COLUMN * ROW
+	local statusTable = {}
+	while spriteNum < totalNum do
+		local randomNumA = math.random( totalNum )
+		print( randomNumA )
+		if statusTable[randomNumA%COLUMN][math.floor( randomNumA/COLUMN )] == 0 then
+			local randomNumB = math.random( totalNum )
+			if randomNumA ~= randomNumB and statusTable[randomNumB%COLUMN][math.floor( randomNumB/COLUMN )] == 0 then
+				if statusTable[randomNumA%COLUMN][math.floor( randomNumA/COLUMN )] == 0  then
+					
 
+				else
+					break
+				end
+			end
+		end
+	end
+end
 -- 创建ui
-function SCENE.initUI()
+function SCENE.initUI( )
 	bgLayout = zc.createLayout( {
 		pos = ccp( zc.cx - COLUMN * 50, zc.cy - ROW * 50 ),
 		size = CCSize( COLUMN * 100, ROW * 100 ),
@@ -138,7 +158,7 @@ function SCENE.initUI()
 				local sprite = zc.createImageView( {
 					ap = ccp( 0.5, 0.5 ),
 					pos = ccp( 100 * i - 50, 100 * ( ROW - j ) + 50 ),
-					src = "Main/head_icon/head_icon_10"..data[j]..".png",
+					src = "Main/head_icon/head_icon_18"..data[j]..".png",
 					tag = ( j - 1 ) * COLUMN + i,
 					listener = SCENE.clickSpriteCallback,
 				} )
@@ -161,7 +181,7 @@ function SCENE.clickBackCallback( pSender, eventType )
 end
 
 -- 点击精灵
-function SCENE.clickSpriteCallback( pSender, eventType )
+function SCENE.clickSpriteCallback1( pSender, eventType )
 	if eventType == TOUCH_EVENT_ENDED then
 		local nextTag = pSender:getTag()
 		if lastTag then
@@ -204,7 +224,7 @@ function SCENE.clickSpriteCallback( pSender, eventType )
 					print( "两个精灵在一条线上" )
 					if SCENE.judgeLine( lastX, lastY, nextX, nextY ) then
 						print( "一条线连接成功" )
-						SCENE.result( nextTag, pathTable )
+						SCENE.result( lastTag, nextTag, pathTable )
 						print( "------------------成功------------------" )
 						return
 					end
@@ -221,7 +241,7 @@ function SCENE.clickSpriteCallback( pSender, eventType )
 						table.insert( pathTable, 2, {
 							lastX, nextY,
 						} )
-						SCENE.result( nextTag, pathTable )
+						SCENE.result( lastTag, nextTag, pathTable )
 						print( "------------------成功------------------" )
 						return
 					end
@@ -232,7 +252,7 @@ function SCENE.clickSpriteCallback( pSender, eventType )
 						table.insert( pathTable, 2, {
 							nextX, lastY,
 						} )
-						SCENE.result( nextTag, pathTable )
+						SCENE.result( lastTag, nextTag, pathTable )
 						print( "------------------成功------------------" )
 						return
 					end
@@ -299,7 +319,7 @@ function SCENE.clickSpriteCallback( pSender, eventType )
 								table.insert( pathTable, 3, {
 										v, nextY,
 								} )
-								SCENE.result( nextTag, pathTable )
+								SCENE.result( lastTag, nextTag, pathTable )
 								print( "------------------成功------------------" )
 								return
 							end
@@ -366,7 +386,7 @@ function SCENE.clickSpriteCallback( pSender, eventType )
 								table.insert( pathTable, 3, {
 										nextX, v,
 								} )
-								SCENE.result( nextTag, pathTable )
+								SCENE.result( lastTag, nextTag, pathTable )
 								print( "------------------成功------------------" )
 								return
 							end
@@ -388,7 +408,7 @@ function SCENE.clickSpriteCallback( pSender, eventType )
 		end
 	end	
 end
-
+-- 判断两点是否在一条直线上，如果在，是否线上没有其他精灵
 function SCENE.judgeLine( ax, ay, bx, by )
 	print( "judgeLine", ax, ay, bx, by )
 	if ax == bx then
@@ -426,43 +446,269 @@ function SCENE.judgeLine( ax, ay, bx, by )
 	end
 	return true
 end
+-- 点击精灵
+function SCENE.clickSpriteCallback( pSender, eventType )
+	if eventType == TOUCH_EVENT_ENDED then
+		local nextTag = pSender:getTag()
+		if lastTag then
+			local resultFlag, pathTable = SCENE.judgeSprite( lastTag, nextTag )
+			if resultFlag then
+				SCENE.result( lastTag, nextTag, pathTable )
+			else
+				bgLayout:getChildByTag( lastTag ):setVisible( false )
+				bgLayout:getChildByTag( nextTag ):setVisible( false )
+				lastTag = nil
+			end
+		else
+			lastTag = nextTag
+			bgLayout:getChildByTag( nextTag ):setVisible( true )
+		end
+	end
+end
+-- 判断是否能消除
+function SCENE.judgeSprite( lastIndex, nextIndex )
+	print( "------------------开始------------------" )
+	if lastIndex == nextIndex then
+		print( "一个精灵" )
+		print( "------------------结束------------------" )
+		return false
+	else
+		print( "两个精灵" )
+		-- 判断
+		local lastX = ( lastIndex - 1 ) % COLUMN + 1
+		local lastY = math.ceil( lastIndex / COLUMN )
+		local nextX = ( nextIndex - 1 ) % COLUMN + 1
+		local nextY = math.ceil( nextIndex / COLUMN )
+		print( "原坐标 ＝", lastX, lastY )
+		print( "新坐标 ＝", nextX, nextY )
+		-- 结果
+		local pathTable  = {
+			{
+				lastX, lastY,
+			},
+			{
+				nextX, nextY,
+			},
+		}
+		if statusTable[lastX][lastY] ~= statusTable[nextX][nextY] then
+			print( "不同精灵不能消除" )
+			print( "------------------失败------------------" )
+			return false
+		end
 
-function SCENE.result( nextTag, path )
-	dump( path, "路径" )
-	local lastX = ( lastTag - 1 ) % COLUMN + 1
-	local lastY = math.ceil( lastTag / COLUMN )
-	local nextX = ( nextTag - 1 ) % COLUMN + 1
-	local nextY = math.ceil( nextTag / COLUMN )
-	local sprite = spriteLayout:getChildByTag( lastTag )
-	spriteLayout:getChildByTag( lastTag ):setTouchEnabled(false)
-	spriteLayout:getChildByTag( nextTag ):setTouchEnabled(false)
-	bgLayout:getChildByTag( lastTag ):removeFromParentAndCleanup( true )
-	bgLayout:getChildByTag( nextTag ):removeFromParentAndCleanup( true )
+		print( "尝试一条线连接" )
+		-- 一条线连接
+		if lastX == nextX or lastY == nextY then
+			print( "两个精灵在一条线上" )
+			if SCENE.judgeLine( lastX, lastY, nextX, nextY ) then
+				print( "一条线连接成功" )
+				print( "------------------成功------------------" )
+				return true, pathTable
+			end
+		end
+		print( "一条线连接失败" )
+
+
+
+		print( "尝试两条线连接" )
+		if statusTable[lastX][nextY] == 0 then
+			-- 两条线结果
+			if SCENE.judgeLine( lastX, lastY, lastX, nextY ) and SCENE.judgeLine( lastX, nextY, nextX, nextY ) then
+				print( "两条线连接成功" )
+				table.insert( pathTable, 2, {
+					lastX, nextY,
+				} )
+				print( "------------------成功------------------" )
+				return true, pathTable
+			end
+		end
+		if statusTable[nextX][lastY] == 0 then
+			if SCENE.judgeLine( lastX, lastY, nextX, lastY ) and SCENE.judgeLine( nextX, lastY, nextX, nextY ) then
+				print( "两条线连接成功" )
+				table.insert( pathTable, 2, {
+					nextX, lastY,
+				} )
+				print( "------------------成功------------------" )
+				return true, pathTable
+			end
+		end
+		print( "两条线连接失败" )
+		
+
+		print( "尝试三条线连接" )
+		-- 三条线连接
+		print( "尝试三条线横向连接" )
+		-- 横向
+		-- lastX左
+		local lastXStart = lastX - 1
+		while lastXStart >= 1 and statusTable[lastXStart][lastY] == 0 do
+			lastXStart = lastXStart - 1
+		end
+		lastXStart = lastXStart + 1
+		-- lastX右
+		local lastXOver = lastX + 1
+		while lastXOver <= COLUMN and statusTable[lastXOver][lastY] == 0 do
+			lastXOver = lastXOver + 1
+		end
+		lastXOver = lastXOver - 1
+		-- nextX左
+		local nextXStart = nextX - 1
+		while nextXStart >= 1 and statusTable[nextXStart][nextY] == 0 do
+			nextXStart = nextXStart - 1
+		end
+		nextXStart = nextXStart + 1
+		-- nextX右
+		local nextXOver = nextX + 1
+		while nextXOver <= COLUMN and statusTable[nextXOver][nextY] == 0 do
+			nextXOver = nextXOver + 1
+		end
+		nextXOver = nextXOver - 1
+		print( "原精灵X范围＝", lastXStart, lastXOver )
+		print( "新精灵X范围＝", nextXStart, nextXOver )
+		-- 判断是否有可能三条线连接
+		if lastXStart < lastXOver and nextXStart < nextXOver then
+			-- 两个精灵左右不为空
+			if not ( nextXOver < lastXStart or lastXOver < nextXStart ) then
+				print("三条线横向连接初始条件满足")
+				-- 有交集
+				local sortTable = { lastXStart, lastXOver, nextXStart, nextXOver }
+				table.sort( sortTable, function( a, b )
+					return a < b
+				end )
+				dump( sortTable, "sortedTable" )
+				local numberTable = {}
+				for i = sortTable[2], sortTable[3] do
+					table.insert( numberTable, i )
+				end
+				dump( numberTable, "numberTable" )
+				table.sort( numberTable, function( a, b )
+					return math.abs( a - lastX ) < math.abs( b - lastX )
+				end )
+				dump( numberTable, "sortTable numberTable" )
+				for i, v in ipairs(numberTable) do
+					if SCENE.judgeLine( v, lastY, v, nextY ) then
+						print( "三条线横向连接成功" )
+						table.insert( pathTable, 2, {
+								v, lastY,
+						} )
+						table.insert( pathTable, 3, {
+								v, nextY,
+						} )
+						print( "------------------成功------------------" )
+						return true, pathTable
+					end
+				end
+			end
+		end
+		print( "三条线横向连接失败" )
+		
+
+		print( "尝试三条线纵向连接" )
+		-- 纵向
+		-- lastY上
+		local lastYStart = lastY - 1
+		while lastYStart >= 1 and statusTable[lastX][lastYStart] == 0 do
+			lastYStart = lastYStart - 1
+		end
+		lastYStart = lastYStart + 1
+		-- lastY下
+		local lastYOver = lastY + 1
+		while lastYOver <= ROW and statusTable[lastX][lastYOver] == 0 do
+			lastYOver = lastYOver + 1
+		end
+		lastYOver = lastYOver - 1
+		-- nextY上
+		local nextYStart = nextY - 1
+		while nextYStart >= 1 and statusTable[nextX][nextYStart] == 0 do
+			nextYStart = nextYStart - 1
+		end
+		nextYStart = nextYStart + 1
+		-- nextY下
+		local nextYOver = nextY + 1
+		while nextYOver <= ROW and statusTable[nextX][nextYOver] == 0 do
+			nextYOver = nextYOver + 1
+		end
+		nextYOver = nextYOver - 1
+		print( "原精灵Y范围＝", lastYStart, lastYOver )
+		print( "新精灵Y范围＝", nextYStart, nextYOver )
+		-- 判断是否有可能三条线连接
+		if lastYStart < lastYOver and nextYStart < nextYOver then
+			-- 两个精灵上下不为空
+			if not ( nextYOver < lastYStart or lastYOver < nextYStart ) then
+				print( "三条线纵向连接初始条件满足" )
+				-- 有交集
+				local sortTable = { lastYStart, lastYOver, nextYStart, nextYOver }
+				table.sort( sortTable, function( a, b )
+					return a < b
+				end )
+				dump(sortTable, "sortedTable")
+				local numberTable = {}
+				for i = sortTable[2], sortTable[3] do
+					table.insert( numberTable, i )
+				end
+				dump(numberTable, "numberTable")
+				table.sort( numberTable, function( a, b )
+					return math.abs( a - lastY ) < math.abs( b - lastY )
+				end )
+				dump(numberTable, "sortTable numberTable")
+				for i, v in ipairs(numberTable) do
+					if SCENE.judgeLine( lastX, v, nextX, v ) then
+						print( "三条线纵向连接成功" )
+						table.insert( pathTable, 2, {
+								lastX, v,
+						} )
+						table.insert( pathTable, 3, {
+								nextX, v,
+						} )
+						print( "------------------成功------------------" )
+						return true, pathTable
+					end
+				end
+			end
+		end
+		print( "三条线纵向连接失败" )
+
+		print( "------------------失败------------------" )
+		return false
+	end
+end
+
+function SCENE.result( lastIndex, nextIndex, pathTable )
+	dump( pathTable, "路径" )
+	local lastX = ( lastIndex - 1 ) % COLUMN + 1
+	local lastY = math.ceil( lastIndex / COLUMN )
+	local nextX = ( nextIndex - 1 ) % COLUMN + 1
+	local nextY = math.ceil( nextIndex / COLUMN )
+	local sprite = spriteLayout:getChildByTag( lastIndex )
+	spriteLayout:getChildByTag( lastIndex ):setTouchEnabled(false)
+	spriteLayout:getChildByTag( nextIndex ):setTouchEnabled(false)
+	bgLayout:getChildByTag( lastIndex ):removeFromParentAndCleanup( true )
+	bgLayout:getChildByTag( nextIndex ):removeFromParentAndCleanup( true )
 	statusTable[lastX][lastY] = 0
 	statusTable[nextX][nextY] = 0
 	lastTag = nil
-	local array = CCArray:create()
-	for i = 2, #path do
-		local steps = math.abs(path[i][1] + path[i][2] - path[i-1][1] - path[i-1][2])
-		array:addObject( CCJumpTo:create( 0.5 * steps, ccp( 100 * path[i][1] - 50, 100 * ( ROW - path[i][2] ) + 50 ), 30, steps ) )
+	local array = CCArray:create( )
+	for i = 2, #pathTable do
+		local steps = math.abs(pathTable[i][1] + pathTable[i][2] - pathTable[i-1][1] - pathTable[i-1][2])
+		array:addObject( CCJumpTo:create( 0.5 * steps, ccp( 100 * pathTable[i][1] - 50, 100 * ( ROW - pathTable[i][2] ) + 50 ), 30, steps ) )
 	end
-	local function disappear()
+	local function disappear( )
 		sprite:removeFromParentAndCleanup( true )
-		spriteLayout:getChildByTag( nextTag ):removeFromParentAndCleanup( true )
+		spriteLayout:getChildByTag( nextIndex ):removeFromParentAndCleanup( true )
 		spriteNum = spriteNum - 2
 		if spriteNum == 0 then
-			zc.tipInfo({text = "恭喜你赢了"})
+			zc.tipInfo( {text = "恭喜你赢了"} )
 			bgLayout:removeFromParentAndCleanup( true )
 			spriteLayout:removeFromParentAndCleanup( true )
-			SCENE.initData()
+			SCENE.initData( )
 		end
 	end
     array:addObject( CCCallFuncN:create( disappear ) )
     sprite:runAction( CCSequence:create( array ) )
 end
 
-function SCENE.clean()
-	lianliankanMiniScene:removeAllChildrenWithCleanup(true)
+function SCENE.clean( )
+	lianliankanMiniScene:removeAllChildrenWithCleanup( true )
 	lianliankanMiniScene = nil
 	miniSceneHeight      = nil
 	touchLayer           = nil
