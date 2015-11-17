@@ -7,19 +7,22 @@
 
 local GameScene = class("GameScene", cc.load("mvc").ViewBase)
 
+local GameLogic = {}
 local statusTable = nil
 local ROW         = nil
 local COLUMN      = nil
 local lastIndex   = nil
 
 function GameScene:onCreate()
-	GameScene.initData()
+	GameLogic.initData()
+	
+	
 end
 
-function GameScene.initData()
+function GameLogic.initData( ... )
 	statusTable = {
 		{
-			false,
+			5,
 			1,
 			2,
 			3,
@@ -27,7 +30,7 @@ function GameScene.initData()
 			4,
 		},
 		{
-			false,
+			5,
 			1,
 			2,
 			3,
@@ -35,7 +38,7 @@ function GameScene.initData()
 			4,
 		},
 		{
-			false,
+			5,
 			1,
 			2,
 			3,
@@ -43,7 +46,7 @@ function GameScene.initData()
 			4,
 		},
 		{
-			false,
+			5,
 			1,
 			2,
 			3,
@@ -51,7 +54,7 @@ function GameScene.initData()
 			4,
 		},
 		{
-			false,
+			5,
 			1,
 			2,
 			3,
@@ -59,7 +62,7 @@ function GameScene.initData()
 			4,
 		},
 		{
-			false,
+			5,
 			1,
 			2,
 			3,
@@ -71,36 +74,18 @@ function GameScene.initData()
 	COLUMN = #statusTable[1]
 end
 
-function GameScene.initUI()
+function GameLogic.initUI( ... )
 	for i = 1, ROW do
 		local data = statusTable[i]
 		for j = 1, COLUMN do
-			if data[j] then
-				local sprite = display.newSprite( "icon/"..data[j]..".png", 80 * j - 40, 80 * (ROW - i) + 40 )
+			if data[j] ~= 0 then
+				local sprite = display.newSprite( "icon/"..data[j]..".png", 80 * j - 40, 80 * (ROW - i) + 40 ):addTo(self)
 				sprite:setTag( (i - 1) * COLUMN + j )
-				sprite:setTouchEnabled(true)
-				sprite:addNodeEventListener(self, GameScene.clickSpriteCallback)
-				this->addChild(sprite)
+				-- sprite:setTouchEnabled(true)
+				-- sprite:addNodeEventListener(self, self:clickSpriteCallback)
 			end
 		end
 	end
-end
-
-function GameScene.clickSpriteCallback(pSender, event)
-	if event.name == "began"
-	if lastIndex then
-		-- 第二次点击，判断能否连接
-	else
-		-- 第一次点击
-		lastIndex = sprite
-	end
-end
-
-function GameScene.clean()
-	statusTable = nil
-	ROW         = nil
-	COLUMN      = nil
-	lastIndex 	= nil
 end
 
 return GameScene
