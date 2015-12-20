@@ -1,8 +1,8 @@
 
 local GameScene = class("GameScene", cc.load("mvc").ViewBase)
-
+-- print new map
 function GameScene:dumpMap( x, y )
-	print("-----------------------------------------------")
+	print("---------------------地图-----------------------")
 	for i, v in ipairs(self.statusTable) do
 		local string = ""
 		if x and i == x then
@@ -22,7 +22,7 @@ function GameScene:dumpMap( x, y )
 	end
 	print("-----------------------------------------------")
 end
-
+-- read data from table, unuse
 function GameScene:initData( )
 	self.spriteNum = 0
 	self.statusTable = {
@@ -86,7 +86,7 @@ function GameScene:initData( )
 		table.insert( statusTable[i], 1, 0 )
 		table.insert( statusTable[i], 0 )
 	end
-	dump( statusTable, "添加0之后的statusTable" )
+	-- dump( statusTable, "添加0之后的statusTable" )
 	self.COLUMN = #statusTable
 	self.ROW    = #statusTable[1]
 	print( "行＝"..self.ROW.."  列＝"..self.COLUMN )
@@ -208,7 +208,6 @@ function GameScene:clickSpriteCallback( tag )
 		local resultFlag, pathTable = self:judgeSprites( self.lastTag, tag )
 		-- dump( pathTable, "pathTable" )
 		if resultFlag then
-			self.bgLayout:getChildByTag( tag ):setVisible( true )
 			self:result( self.lastTag, tag, pathTable )
 		else
 			self.bgLayout:getChildByTag( self.lastTag ):setVisible( false )
@@ -372,16 +371,16 @@ function GameScene:judgeSprites( lastIndex, nextIndex )
 				table.sort( sortTable, function( a, b )
 					return a < b
 				end )
-				dump( sortTable, "sortedTable" )
+				-- dump( sortTable, "sortedTable" )
 				local numberTable = {}
 				for i = sortTable[2], sortTable[3] do
 					table.insert( numberTable, i )
 				end
-				dump( numberTable, "numberTable" )
+				-- dump( numberTable, "numberTable" )
 				table.sort( numberTable, function( a, b )
 					return math.abs( a - lastX ) < math.abs( b - lastX )
 				end )
-				dump( numberTable, "sortTable numberTable" )
+				-- dump( numberTable, "sortTable numberTable" )
 				for i, v in ipairs(numberTable) do
 					if self:judgeLine( v, lastY, v, nextY ) then
 						print( "三条线横向连接成功" )
@@ -438,16 +437,16 @@ function GameScene:judgeSprites( lastIndex, nextIndex )
 				table.sort( sortTable, function( a, b )
 					return a < b
 				end )
-				dump(sortTable, "sortedTable")
+				-- dump(sortTable, "sortedTable")
 				local numberTable = {}
 				for i = sortTable[2], sortTable[3] do
 					table.insert( numberTable, i )
 				end
-				dump(numberTable, "numberTable")
+				-- dump(numberTable, "numberTable")
 				table.sort( numberTable, function( a, b )
 					return math.abs( a - lastY ) < math.abs( b - lastY )
 				end )
-				dump(numberTable, "sortTable numberTable")
+				-- dump(numberTable, "sortTable numberTable")
 				for i, v in ipairs(numberTable) do
 					if self:judgeLine( lastX, v, nextX, v ) then
 						print( "三条线纵向连接成功" )
@@ -471,7 +470,7 @@ function GameScene:judgeSprites( lastIndex, nextIndex )
 end
 -- show the path of two sprites, then clean the two sprites
 function GameScene:result( lastIndex, nextIndex, pathTable )
-	dump( pathTable, "路径" )
+	-- dump( pathTable, "路径" )
 	local lastX = ( lastIndex - 1 ) % self.COLUMN + 1
 	local lastY = math.ceil( lastIndex / self.COLUMN )
 	local nextX = ( nextIndex - 1 ) % self.COLUMN + 1
@@ -497,11 +496,50 @@ function GameScene:result( lastIndex, nextIndex, pathTable )
 		if self.spriteNum == 0 then
 			-- self.bgLayout:removeAllChildren( true )
 			-- self.spriteLayout:removeAllChildren( true )
-			self:buildData( 8, 6, 10 )
+			self:httpServer()
 		end
 	end
     table.insert( array, cc.CallFunc:create( disappear ) )
     sprite:runAction( cc.Sequence:create( array ) )
+end
+-- http get
+function GameScene:httpGet()
+	local xhr = cc.XMLHttpRequest:new()
+    xhr.responseType = cc.XMLHTTPREQUEST_RESPONSE_STRING
+    xhr:open("GET", "")--ip:port
+
+    local function onReadyStateChange()
+        if xhr.readyState == 4 and (xhr.status >= 200 and xhr.status < 207) then
+            print(xhr.response)
+            self:buildData( 8, 6, 10 )
+        else
+            print("xhr.readyState is:", xhr.readyState, "xhr.status is: ",xhr.status)
+        end
+    end
+
+    xhr:registerScriptHandler(onReadyStateChange)
+    xhr:send()
+end
+-- http post
+function GameScene:httpPost()
+	local xhr = cc.XMLHttpRequest:new()
+    xhr.responseType = cc.XMLHTTPREQUEST_RESPONSE_STRING
+    xhr:open("POST", "")--ip:port
+    local function onReadyStateChange()
+        if xhr.readyState == 4 and (xhr.status >= 200 and xhr.status < 207) then
+            print(xhr.response)
+            self:buildData( 8, 6, 10 )
+        else
+            print("xhr.readyState is:", xhr.readyState, "xhr.status is: ",xhr.status)
+        end
+    end
+    xhr:registerScriptHandler(onReadyStateChange)
+    xhr:send( os.date("year=%y&month=%m&day=%d&hour=%H&minute=%M&second=%S") )
+end
+-- send data to server
+function GameScene:httpServer()
+	-- self:httpGet()
+	self:httpPost()
 end
 function GameScene:onCreate()
 	-- background
