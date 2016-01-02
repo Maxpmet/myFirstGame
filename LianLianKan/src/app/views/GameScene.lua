@@ -1,7 +1,109 @@
 
 local GameScene = class("GameScene", cc.load("mvc").ViewBase)
+
+-- init
+function GameScene:init( column, row, kind )
+	-- icon background container
+	self.bgLayout = ccui.Layout:create()
+	self.bgLayout:setOpacity( 160 )
+	self.bgLayout:setPosition( cc.p( display.cx - ( column + 2 )*50, display.cy - ( row + 2 )*50 ) )
+	self.bgLayout:setContentSize({( column + 2 )*100, ( row + 2 )*100 })
+	self:addChild( self.bgLayout )
+	-- icon container
+	self.spriteLayout = ccui.Layout:create()
+	self.spriteLayout:setPosition( cc.p( display.cx - ( column + 2 )*50, display.cy - ( row + 2 )*50 ) )
+	self.spriteLayout:setContentSize({( column + 2 )*100, ( row + 2 )*100 })
+	self:addChild( self.spriteLayout )
+
+	-- build map data
+	self:initData( column, row, kind )
+
+	-- init map ui
+	self:initUI()
+end
+-- build new map data
+function GameScene:initData( column, row, kind )
+	self.COLUMN = column + 2
+	self.ROW = row + 2
+	self.KIND = kind
+
+	local totalNum = column * row
+	self.spriteNum = 0
+	self.statusTable = {}
+	-- clear self.statusTable to 0
+	for i = 1, self.COLUMN do
+		self.statusTable[i] = {}
+		for j = 1, self.ROW do
+			self.statusTable[i][j] = 0
+		end
+	end
+	print("--------------initial map data--------------")
+	-- virable
+	-- first random
+	local randomLastIndex = 0
+	local randomLastX = 0
+	local randomLastY = 0
+	-- second random
+	local randomNextIndex = 0
+	local randomNextX = 0
+	local randomNextY = 0
+	-- random kind
+	local randomKind = 0
+	-- count for out
+	local outFlag = 0
+	-- count for tmpNum
+	local tmpNum = 0
+	while tmpNum < totalNum do
+		-- first random infomation,transform to the location in map
+		randomLastIndex = math.random( totalNum )
+		randomLastX = ( randomLastIndex - 1 ) % column + 2
+		randomLastY = math.ceil( randomLastIndex / column ) + 1
+		randomLastIndex = randomLastX + ( randomLastY - 1 ) * self.COLUMN
+		randomKind = math.random( kind )
+		-- judge whether the first random point is empty and whether it is connective
+		if self.statusTable[randomLastX][randomLastY] == 0 and self:judgeSprite( randomLastX, randomLastY ) then
+			-- ensure the first point
+			self.statusTable[randomLastX][randomLastY] = randomKind
+			-- search for the second point
+			while true do
+				-- second random infomation,transform to the location in map
+				randomNextIndex = math.random( totalNum )
+				randomNextX = ( randomNextIndex - 1 ) % column + 2
+				randomNextY = math.ceil( randomNextIndex / column ) + 1
+				randomNextIndex = randomNextX + ( randomNextY - 1 ) * self.COLUMN
+				-- judge whether the second random point is empty and whether it is connective
+				if self.statusTable[randomNextX][randomNextY] == 0 then
+					if self:judgeSprite( randomNextX, randomNextY ) then
+						self.statusTable[randomNextX][randomNextY] = randomKind
+						if self:judgeSprites( randomLastIndex, randomNextIndex ) then
+						-- ensure the second point
+							print("success")
+							self.spriteNum = self.spriteNum + 2
+							break
+						else
+							self.statusTable[randomNextX][randomNextY] = 0
+						end
+					end
+				end
+				-- the second point is not suitable
+				outFlag = outFlag + 1
+				if outFlag > 10 then
+					-- no match point for first point,clear the first point
+					self.statusTable[randomLastX][randomLastY] = 0
+					print("failed")
+					break
+				end
+			end
+			tmpNum = tmpNum + 2
+			outFlag = 0
+		end
+	end
+	self:dumpMap()
+end
 -- print new map
 function GameScene:dumpMap( x, y )
+	-- local function print( ... )
+	-- end
 	print("---------------------地图-----------------------")
 	for i, v in ipairs(self.statusTable) do
 		local string = ""
@@ -22,95 +124,27 @@ function GameScene:dumpMap( x, y )
 	end
 	print("-----------------------------------------------")
 end
--- read data from table, unuse
-function GameScene:initData( )
-	self.spriteNum = 0
-	self.statusTable = {
-		{
-			1,
-			2,
-			3,
-			4,
-			5,
-			6,
-		},
-		{
-			1,
-			2,
-			3,
-			4,
-			5,
-			6,
-		},
-		{
-			6,
-			3,
-			1,
-			2,
-			5,
-			4,
-		},
-		{
-			2,
-			1,
-			5,
-			6,
-			3,
-			4,
-		},
-		{
-			5,
-			4,
-			2,
-			3,
-			1,
-			6,
-		},
-		{
-			3,
-			1,
-			5,
-			4,
-			2,
-			6,
-		},
-	}
-	local statusTable = self.statusTable
-	local zeroTable = {}
-	for i = 1, #statusTable[1] do
-		zeroTable[i] = 0
-	end
-	table.insert( statusTable, 1, zeroTable )
-	table.insert( statusTable, clone( zeroTable ) )
-	for i = 1, #statusTable do
-		table.insert( statusTable[i], 1, 0 )
-		table.insert( statusTable[i], 0 )
-	end
-	-- dump( statusTable, "添加0之后的statusTable" )
-	self.COLUMN = #statusTable
-	self.ROW    = #statusTable[1]
-	print( "行＝"..self.ROW.."  列＝"..self.COLUMN )
-	self:initUI( )
-end
+-- use the data to init ui
 function GameScene:initUI()
 	for i = 1, self.COLUMN do
 		local data = self.statusTable[i]
 		for j = 1, self.ROW do
 			if data[j] ~= 0 then
+				-- bg
 				local spriteBg = display.newSprite( "res/icon/potential/1.png", 100 * i - 50, 100 * ( self.ROW - j ) + 50 )
 				spriteBg:setTag( ( j - 1 ) * self.COLUMN + i )
 				spriteBg:setVisible( false )
 				self.bgLayout:addChild( spriteBg )
-				local sprite = display.newSprite( "res/icon/18"..data[j]..".png", 100 * i - 50, 100 * ( self.ROW - j ) + 50 )
+				-- icon
+				local sprite = display.newSprite( "res/icon/"..( 180 + data[j] )..".png", 100 * i - 50, 100 * ( self.ROW - j ) + 50 )
 				sprite:setTag( ( j - 1 ) * self.COLUMN + i )
 				self.spriteLayout:addChild( sprite )
-				self.spriteNum = self.spriteNum + 1
+				-- listener
 				local listenner = cc.EventListenerTouchOneByOne:create()
 				sprite._listenner = listenner
 				listenner:setSwallowTouches(true)
 				listenner:registerScriptHandler( function( touch, event )
 					local target = event:getCurrentTarget()
-        
 			        local locationInNode = target:convertToNodeSpace(touch:getLocation())
 			        local s = target:getContentSize()
 			        local rect = cc.rect(0, 0, s.width, s.height)
@@ -129,86 +163,24 @@ function GameScene:initUI()
 		end
 	end
 end
+-- judge whether the point is surrendered by other icons
 function GameScene:judgeSprite( x, y )
-	for i = x - 1, x + 1 do
-		for j = y - 1, y + 1 do
-			if i > 1 and i < self.COLUMN and j > 1 and j < self.ROW and self.statusTable[i][j] == 0 then
-				return true
-			end
+	if x > 1 and x < self.COLUMN and y > 1 and y < self.ROW then
+		-- point in table
+		if self.statusTable[x - 1][y - 1] == 0 or self.statusTable[x + 1][y - 1] == 0 or self.statusTable[x - 1][y + 1] == 0 or self.statusTable[x + 1][y + 1] == 0 then
+			return true
 		end
 	end
+	-- when at least one of the left and right and up and down point is empty, return true
 	return false
 end
--- build new map data
-function GameScene:buildData( column, row, kind )
-	self.COLUMN = column + 2
-	self.ROW = row + 2
-	self.KIND = kind
-	local totalNum = column * row
-	self.spriteNum = 0
-	self.statusTable = {}
-	-- clear self.statusTable to 0
-	for i = 1, self.COLUMN do
-		self.statusTable[i] = {}
-		for j = 1, self.ROW do
-			self.statusTable[i][j] = 0
-		end
-	end
-	self:dumpMap()
-	-- virable
-	local randomLastIndex = 0
-	local randomLastX = 0
-	local randomLastY = 0
-	local randomNextIndex = 0
-	local randomNextX = 0
-	local randomNextY = 0
-	local randomKind = 0
-	local outFlag = 0
-	while self.spriteNum < totalNum do
-		randomLastIndex = math.random( totalNum )
-		randomLastX = ( randomLastIndex - 1 ) % column + 2
-		randomLastY = math.ceil( randomLastIndex / column ) + 1
-		randomLastIndex = randomLastX + ( randomLastY - 1 ) * self.COLUMN
-		randomKind = math.random( kind )
-		print( "randomLastIndex =", randomLastIndex )
-		print( "randomLastX =", randomLastX )
-		print( "randomLastY =", randomLastY )
-		print( "randomKind =", randomKind )
-		if self.statusTable[randomLastX][randomLastY] == 0 and self:judgeSprite( randomLastX, randomLastY ) then
-			self.statusTable[randomLastX][randomLastY] = randomKind
-			while true do
-				randomNextIndex = math.random( totalNum )
-				randomNextX = ( randomNextIndex - 1 ) % column + 2
-				randomNextY = math.ceil( randomNextIndex / column ) + 1
-				randomNextIndex = randomNextX + ( randomNextY - 1 ) * self.COLUMN
-				if self.statusTable[randomNextX][randomNextY] == 0 then
-					self.statusTable[randomNextX][randomNextY] = randomKind
-					if self:judgeSprites( randomLastIndex, randomNextIndex ) then
-						break
-					else
-						self.statusTable[randomNextX][randomNextY] = 0
-						outFlag = outFlag + 1
-						if outFlag > 10 then
-							self.statusTable[randomLastX][randomLastY] = 0
-							break
-						end
-					end
-				end
-			end
-			self.spriteNum = self.spriteNum + 2
-			print( "spriteNum =", self.spriteNum )
-		end
-	end
-	self:dumpMap()
-	self:initUI()
-end
--- 点击精灵
+-- click sprite
 function GameScene:clickSpriteCallback( tag )
 	if self.lastTag then
 		local resultFlag, pathTable = self:judgeSprites( self.lastTag, tag )
 		-- dump( pathTable, "pathTable" )
 		if resultFlag then
-			self:result( self.lastTag, tag, pathTable )
+			self:showResult( self.lastTag, tag, pathTable )
 		else
 			self.bgLayout:getChildByTag( self.lastTag ):setVisible( false )
 			self.bgLayout:getChildByTag( tag ):setVisible( false )
@@ -222,7 +194,7 @@ function GameScene:clickSpriteCallback( tag )
 end
 -- 判断两点是否在一条直线上，如果在，是否线上没有其他精灵
 function GameScene:judgeLine( ax, ay, bx, by )
-	print( "judgeLine", ax, ay, bx, by )
+	-- print( "judgeLine", ax, ay, bx, by )
 	if ax == bx then
 		local start = 0
 		local over  = 0
@@ -235,7 +207,7 @@ function GameScene:judgeLine( ax, ay, bx, by )
 		end
 		for i = start, over do
 			if self.statusTable[ax][i] ~= 0 then
-				print( "judgeLine", ax, i, false )
+				-- print( "judgeLine", ax, i, false )
 				return false
 			end
 		end
@@ -251,7 +223,7 @@ function GameScene:judgeLine( ax, ay, bx, by )
 		end
 		for i = start, over do
 			if self.statusTable[i][ay] ~= 0 then
-				print( "judgeLine", i, ay, false )
+				-- print( "judgeLine", i, ay, false )
 				return false
 			end
 		end
@@ -469,51 +441,66 @@ function GameScene:judgeSprites( lastIndex, nextIndex )
 	end
 end
 -- show the path of two sprites, then clean the two sprites
-function GameScene:result( lastIndex, nextIndex, pathTable )
+function GameScene:showResult( lastIndex, nextIndex, pathTable )
 	-- dump( pathTable, "路径" )
+	-- transform position
 	local lastX = ( lastIndex - 1 ) % self.COLUMN + 1
 	local lastY = math.ceil( lastIndex / self.COLUMN )
 	local nextX = ( nextIndex - 1 ) % self.COLUMN + 1
 	local nextY = math.ceil( nextIndex / self.COLUMN )
+	-- get sprite
 	local sprite = self.spriteLayout:getChildByTag( lastIndex )
+	local spriteBg = self.bgLayout:getChildByTag( lastIndex )
+	self.bgLayout:getChildByTag( nextIndex ):setVisible( true )
+	-- remove listener
 	local eventDispatcher = cc.Director:getInstance():getEventDispatcher()
 	eventDispatcher:removeEventListener( self.spriteLayout:getChildByTag( lastIndex )._listenner )
 	eventDispatcher:removeEventListener( self.spriteLayout:getChildByTag( nextIndex )._listenner )
-	self.bgLayout:getChildByTag( lastIndex ):removeFromParent( true )
-	self.bgLayout:getChildByTag( nextIndex ):removeFromParent( true )
+	-- remove bg
+	-- self.bgLayout:getChildByTag( lastIndex ):removeFromParent( true )
+	-- self.bgLayout:getChildByTag( nextIndex ):removeFromParent( true )
 	self.statusTable[lastX][lastY] = 0
 	self.statusTable[nextX][nextY] = 0
 	self.lastTag = nil
 	local array = {}
+	local bgArray = {}
 	for i = 2, #pathTable do
 		local steps = math.abs(pathTable[i][1] + pathTable[i][2] - pathTable[i-1][1] - pathTable[i-1][2])
-		table.insert( array, cc.JumpTo:create( 0.5 * steps, cc.p( 100 * pathTable[i][1] - 50, 100 * ( self.ROW - pathTable[i][2] ) + 50 ), 30, steps ) )
+		local action = cc.JumpTo:create( 0.5 * steps, cc.p( 100 * pathTable[i][1] - 50, 100 * ( self.ROW - pathTable[i][2] ) + 50 ), 30, steps )
+		array[#array + 1] = action
+		bgArray[#bgArray + 1] = action:clone()
 	end
 	local function disappear( )
 		sprite:removeFromParent( true )
 		self.spriteLayout:getChildByTag( nextIndex ):removeFromParent( true )
+		self.bgLayout:getChildByTag( lastIndex ):removeFromParent( true )
+		self.bgLayout:getChildByTag( nextIndex ):removeFromParent( true )
 		self.spriteNum = self.spriteNum - 2
-		if self.spriteNum == 0 then
-			-- self.bgLayout:removeAllChildren( true )
-			-- self.spriteLayout:removeAllChildren( true )
+		if self.spriteNum <= 0 then
+			self.bgLayout:removeFromParent()
+			self.bgLayou = nil
+			self.spriteLayout:removeFromParent()
+			self.spriteLayout = nil
+
 			self:httpServer()
 		end
 	end
     table.insert( array, cc.CallFunc:create( disappear ) )
     sprite:runAction( cc.Sequence:create( array ) )
+	spriteBg:runAction( cc.Sequence:create( bgArray ) )
 end
 -- http get
 function GameScene:httpGet()
 	local xhr = cc.XMLHttpRequest:new()
     xhr.responseType = cc.XMLHTTPREQUEST_RESPONSE_STRING
-    xhr:open("GET", "")--ip:port
+    xhr:open("GET", "http://114.246.157.82:8888/")--ip:port
 
     local function onReadyStateChange()
         if xhr.readyState == 4 and (xhr.status >= 200 and xhr.status < 207) then
-            print(xhr.response)
-            self:buildData( 8, 6, 10 )
+            print("tsctsctsc  ",xhr.response)
+            self:init( self.COLUMN - 1, self.ROW - 1, self.KIND + 2 )
         else
-            print("xhr.readyState is:", xhr.readyState, "xhr.status is: ",xhr.status)
+            print("tsctsctsc  xhr.readyState is:", xhr.readyState, "xhr.status is: ",xhr.status)
         end
     end
 
@@ -524,11 +511,11 @@ end
 function GameScene:httpPost()
 	local xhr = cc.XMLHttpRequest:new()
     xhr.responseType = cc.XMLHTTPREQUEST_RESPONSE_STRING
-    xhr:open("POST", "")--ip:port
+    xhr:open("POST", "http://114.246.157.82:8888/")--ip:port
     local function onReadyStateChange()
         if xhr.readyState == 4 and (xhr.status >= 200 and xhr.status < 207) then
             print(xhr.response)
-            self:buildData( 8, 6, 10 )
+            self:init( self.COLUMN - 2, self.ROW - 2, self.KIND )
         else
             print("xhr.readyState is:", xhr.readyState, "xhr.status is: ",xhr.status)
         end
@@ -538,8 +525,9 @@ function GameScene:httpPost()
 end
 -- send data to server
 function GameScene:httpServer()
-	-- self:httpGet()
-	self:httpPost()
+	print("tsctsctsc  httpServer")
+	self:httpGet()
+	-- self:httpPost()
 end
 function GameScene:onCreate()
 	-- background
@@ -547,20 +535,8 @@ function GameScene:onCreate()
 	bg:setAnchorPoint(cc.p(0.5,0.5))
 	bg:setPosition(cc.p(display.cx,display.cy))
 	self:addChild(bg)
-	-- icon background container
-	self.bgLayout = ccui.Layout:create()
-	self.bgLayout:setOpacity( 160 )
-	self.bgLayout:setPosition( cc.p( display.cx - 8 * 50, display.cy - 8 * 50 ) )
-	self.bgLayout:setContentSize({ 8 * 1000, 8 * 1000 })
-	self:addChild( self.bgLayout )
-	-- icon container
-	self.spriteLayout = ccui.Layout:create()
-	self.spriteLayout:setPosition( cc.p( display.cx - 8 * 50, display.cy - 8 * 50 ) )
-	self.spriteLayout:setContentSize({ 8 * 100, 8 * 100 })
-	self:addChild( self.spriteLayout )
 
-	-- build map data
-	self:buildData( 4, 6, 5 )
+	self:init( 4, 4, 3 )
 end
 
 return GameScene

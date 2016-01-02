@@ -7,7 +7,8 @@ function MainScene:onCreate()
 	playButton:setAnchorPoint( cc.p( 0.5, 0.5 ) )
 	playButton:setPosition( display.cx, display.cy )
 	playButton:addTouchEventListener(function()
-		self:getApp():enterScene("GameScene")   -- 进入游戏界面
+		-- 进入游戏界面
+		self:getApp():enterScene("GameScene")
 	end)
 	self:addChild( playButton )
 end
