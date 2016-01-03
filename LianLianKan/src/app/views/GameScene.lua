@@ -3,6 +3,14 @@ local GameScene = class("GameScene", cc.load("mvc").ViewBase)
 
 -- init
 function GameScene:init( column, row, kind )
+	print("tsctsctsc init ", column, row, kind )
+	local maxColumn = math.floor( display.width/100 )
+	column = column > maxColumn and maxColumn or column
+	local maxRow = math.floor( display.height/100 )
+	row = row > maxRow and maxRow or row
+
+	kind = kind + ( column > maxColumn and 1 or 0 ) + ( row > maxRow and 1 or 0 )
+
 	-- icon background container
 	self.bgLayout = ccui.Layout:create()
 	self.bgLayout:setOpacity( 160 )
@@ -457,8 +465,6 @@ function GameScene:showResult( lastIndex, nextIndex, pathTable )
 	eventDispatcher:removeEventListener( self.spriteLayout:getChildByTag( lastIndex )._listenner )
 	eventDispatcher:removeEventListener( self.spriteLayout:getChildByTag( nextIndex )._listenner )
 	-- remove bg
-	-- self.bgLayout:getChildByTag( lastIndex ):removeFromParent( true )
-	-- self.bgLayout:getChildByTag( nextIndex ):removeFromParent( true )
 	self.statusTable[lastX][lastY] = 0
 	self.statusTable[nextX][nextY] = 0
 	self.lastTag = nil
@@ -514,10 +520,10 @@ function GameScene:httpPost()
     xhr:open("POST", "http://114.246.157.82:8888/")--ip:port
     local function onReadyStateChange()
         if xhr.readyState == 4 and (xhr.status >= 200 and xhr.status < 207) then
-            print(xhr.response)
-            self:init( self.COLUMN - 2, self.ROW - 2, self.KIND )
+            print("tsctsctsc  ",xhr.response)
+            self:init( self.COLUMN - 1, self.ROW - 1, self.KIND + 2 )
         else
-            print("xhr.readyState is:", xhr.readyState, "xhr.status is: ",xhr.status)
+            print("tsctsctsc  xhr.readyState is:", xhr.readyState, "xhr.status is: ",xhr.status)
         end
     end
     xhr:registerScriptHandler(onReadyStateChange)
@@ -526,8 +532,8 @@ end
 -- send data to server
 function GameScene:httpServer()
 	print("tsctsctsc  httpServer")
-	self:httpGet()
-	-- self:httpPost()
+	-- self:httpGet()
+	self:httpPost()
 end
 function GameScene:onCreate()
 	-- background
